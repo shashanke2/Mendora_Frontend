@@ -1,27 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Star, ArrowLeft, MapPin } from "lucide-react";
 import PlumberImg from "./assets/plu.png";
 import ProfileImg from "./assets/profile.png";
 import ShareIcon from "./assets/share.png";
 import WhatsAppIcon from "./assets/whatsapp.png";
-
-const services = [
-  {
-    id: 1,
-    name: "Waste pipe replacement",
-    description:
-      "Remove damaged or leaking waste pipes and install new, durable piping to ensure smooth drainage.",
-    img: PlumberImg,
-  },
-  {
-    id: 2,
-    name: "Water hose installation",
-    description:
-      "Safe and precise setup of water inlet/outlet hoses for appliances or fixtures to prevent leaks and maintain steady flow.",
-    img: PlumberImg,
-  },
-];
 
 const reviews = [
   {
@@ -48,12 +31,34 @@ const reviews = [
     id: 4,
     name: "Ravi Kumar",
     date: "Oct 8, 2025",
-    description: "Highly recommend Rakesh Plumbing for all plumbing emergencies.",
+    description: "Highly recommend for all emergencies.",
   },
 ];
 
 export default function IndividualService() {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // LandingPage se data receive karo
+  const { businessData } = location.state || {};
+  
+  if (!businessData) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">No business data available</p>
+          <button 
+            onClick={() => navigate('/landing-page')}
+            className="px-4 py-2 bg-orange-400 text-white rounded-lg"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { businessName, providerName, services, category } = businessData;
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative pb-24">
@@ -62,25 +67,25 @@ export default function IndividualService() {
         <ArrowLeft
           className="text-black cursor-pointer"
           size={24}
-          onClick={() => navigate("/landing-page")}
+          onClick={() => navigate(-1)}
         />
         <img src={ShareIcon} alt="Share" className="w-5 h-5 cursor-pointer" />
       </div>
 
       {/* Main Content */}
       <div className="pt-16 px-4 space-y-6">
-        {/* Rakesh Plumbing Service Card */}
+        {/* Business Card */}
         <div className="bg-white rounded-2xl shadow-md p-4">
           <img
             src={PlumberImg}
-            alt="Rakesh Plumbing Service"
+            alt={businessName}
             className="w-full h-48 rounded-xl object-cover mb-3"
           />
 
           <div className="flex items-center space-x-2 mb-2">
             <img src={ProfileImg} alt="Profile" className="w-6 h-6" />
             <h2 className="text-lg font-semibold text-black">
-              Rakesh Plumbing Service
+              {businessName}
             </h2>
           </div>
 
@@ -111,27 +116,33 @@ export default function IndividualService() {
           </div>
         </div>
 
-        {/* Services Section */}
+        {/* Services Section - Dynamic from API */}
         <div>
           <h1 className="text-xl font-bold text-black mb-4 px-1">Services</h1>
 
           <div className="space-y-5">
             {services.map((service) => (
               <div
-                key={service.id}
-                className="flex justify-between items-center bg-white rounded-2xl shadow-md p-3"
+                key={service.serviceId}
+                className="flex justify-between items-start bg-white rounded-2xl shadow-md p-4"
               >
-                <div className="flex flex-col space-y-1">
-                  <h2 className="text-base font-semibold text-black">
-                    {service.name}
-                  </h2>
-                  <p className="text-gray-600 text-sm">{service.description}</p>
+                <div className="flex flex-col space-y-2 flex-1">
+                  <div className="flex justify-between items-start">
+                    <h2 className="text-base font-semibold text-black">
+                      {service.serviceName}
+                    </h2>
+                    <p className="font-bold text-orange-600 text-lg ml-3">₹{service.price}</p>
+                  </div>
+                  <p className="text-gray-600 text-sm pr-2">
+                    Professional {service.serviceName.toLowerCase()} service provided by {providerName}. 
+                    Quality work guaranteed with expert handling.
+                  </p>
                 </div>
-                <div className="ml-4 mr-4 flex-shrink-0 rounded-xl overflow-hidden">
+                <div className="ml-4 flex-shrink-0 rounded-xl overflow-hidden">
                   <img
-                    src={service.img}
-                    alt={service.name}
-                    className="w-24 h-24 rounded-xl object-cover mb-2"
+                    src={PlumberImg}
+                    alt={service.serviceName}
+                    className="w-24 h-24 rounded-xl object-cover"
                   />
                 </div>
               </div>
@@ -175,10 +186,10 @@ export default function IndividualService() {
             Quick Information
           </h2>
           <p className="text-gray-600 text-sm">
-            Quick Info: Rakesh Plumbing Service provides professional plumbing
-            solutions, specializing in fixing leaks, installing fixtures, and
-            handling all types of plumbing emergencies for residential and
-            commercial clients.
+            {businessName} provides professional {category.toLowerCase()} solutions, 
+            specializing in {services.map(s => s.serviceName.toLowerCase()).slice(0, 3).join(', ')}
+            {services.length > 3 ? ' and more' : ''}
+            {' '}for residential and commercial clients. Managed by {providerName}.
           </p>
         </div>
       </div>

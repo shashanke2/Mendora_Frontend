@@ -17,15 +17,15 @@ import RedImg from "./assets/red.png";
 import GreenImg from "./assets/green.png";
 
 const popularServices = [
-  { id: 1, name: "Plumber", img: PlumberImg },
-  { id: 2, name: "Carpenter", img: CarpenterImg },
-  { id: 3, name: "Painting", img: PaintingImg },
+  { id: 1, name: "Plumber", img: PlumberImg, category: "Plumbing" },
+  { id: 2, name: "Carpenter", img: CarpenterImg, category: "Carpentry" },
+  { id: 3, name: "Painting", img: PaintingImg, category: "Painting" },
 ];
 
 const trendingHighlights = [
-  { id: 1, name: "Bathroom Renovation", img: BathroomImg },
-  { id: 2, name: "Kitchen Renovation", img: KitchenImg },
-  { id: 3, name: "Bedroom Renovation", img: BedroomImg },
+  { id: 1, name: "Bathroom Renovation", img: BathroomImg, category: "Bathroom Renovation" },
+  { id: 2, name: "Kitchen Renovation", img: KitchenImg, category: "Kitchen Renovation" },
+  { id: 3, name: "Bedroom Renovation", img: BedroomImg, category: "Bedroom Renovation" },
 ];
 
 const whyChooseMendora = [
@@ -73,9 +73,42 @@ const LandingPage = () => {
   const [searchText, setSearchText] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeService, setActiveService] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isServiceOpen, setIsServiceOpen] = useState(false);
+  const [allServices, setAllServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const scrollRef = useRef(null);
+
+  // Backend se saari services fetch karo
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:3000/api/provider/services');
+        const data = await response.json();
+        setAllServices(data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
+
+  // Jab category select ho, tab filter karo
+  useEffect(() => {
+    if (selectedCategory && allServices.length > 0) {
+      const filtered = allServices.filter(
+        service => service.service_category === selectedCategory
+      );
+      setFilteredServices(filtered);
+      console.log('Filtered Services:', filtered);
+    }
+  }, [selectedCategory, allServices]);
 
   useEffect(() => {
     const scrollContainer = scrollRef.current;
@@ -108,6 +141,13 @@ const LandingPage = () => {
     const interval = setInterval(scrollStep, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  // Jab koi service pe click kare
+  const handleServiceClick = (service) => {
+    setActiveService(service);
+    setSelectedCategory(service.category); // Category set karo
+    setIsServiceOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col relative">
@@ -192,11 +232,8 @@ const LandingPage = () => {
               {popularServices.map((service) => (
                 <div
                   key={service.id}
-                  className="flex-shrink-0 w-44 h-44 flex flex-col items-center justify-center"
-                  onClick={() => {
-                    setActiveService(service);
-                    setIsServiceOpen(true);
-                  }}
+                  className="flex-shrink-0 w-44 h-44 flex flex-col items-center justify-center cursor-pointer"
+                  onClick={() => handleServiceClick(service)}
                 >
                   <img
                     src={service.img}
@@ -222,11 +259,8 @@ const LandingPage = () => {
               {trendingHighlights.map((highlight) => (
                 <div
                   key={highlight.id}
-                  className="flex-shrink-0 w-44 h-44 flex flex-col items-center justify-center"
-                  onClick={() => {
-                    setActiveService(highlight);
-                    setIsServiceOpen(true);
-                  }}
+                  className="flex-shrink-0 w-44 h-44 flex flex-col items-center justify-center cursor-pointer"
+                  onClick={() => handleServiceClick(highlight)}
                 >
                   <img
                     src={highlight.img}
@@ -277,19 +311,71 @@ const LandingPage = () => {
 
       {/* 📋 Service Drawer */}
       {isServiceOpen && (
-        <div className="fixed bottom-0 left-0 w-full h-[65%] bg-white rounded-t-3xl shadow-xl overflow-auto transition-transform duration-300">
+        <div className="fixed bottom-0 left-0 w-full h-[65%] bg-white rounded-t-3xl shadow-xl overflow-auto transition-transform duration-300 z-50">
           <div className="flex justify-between items-center p-4 border-b">
             <h2 className="text-xl text-black font-bold">{activeService?.name}</h2>
             <button
-              onClick={() => setIsServiceOpen(false)}
+              onClick={() => {
+                setIsServiceOpen(false);
+                setSelectedCategory(null);
+                setFilteredServices([]);
+              }}
               className="text-black text-3xl mr-2 font-bold"
             >
               ×
             </button>
           </div>
 
-          <div>
-            <ServicePage service={activeService} />
+          <div className="p-4">
+            {loading ? (
+              <p className="text-center text-gray-500">Loading services...</p>
+            ) : filteredServices.length > 0 ? (
+              <div>
+                <h3 className="text-lg font-bold mb-4 text-gray-800">
+                  Available {selectedCategory} Services
+                </h3>
+                <div className="space-y-3">
+                  {/* Group by businessName */}
+                  {Array.from(new Set(filteredServices.map(s => s.businessName))).map((businessName) => {
+                    const businessServices = filteredServices.filter(s => s.businessName === businessName);
+                    const firstService = businessServices[0];
+                    
+                    return (
+                      <div
+                        key={businessName}
+                        className="bg-orange-50 border border-orange-200 rounded-xl p-4 cursor-pointer hover:bg-orange-100 transition-colors"
+                        onClick={() => navigate('/individual-service', { 
+                          state: { 
+                            businessData: {
+                              businessName: firstService.businessName,
+                              providerName: firstService.providerName,
+                              providerId: firstService.providerId,
+                              services: businessServices,
+                              category: firstService.service_category
+                            }
+                          } 
+                        })}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h4 className="font-bold text-gray-800 text-lg">{businessName}</h4>
+                            <p className="text-sm text-gray-600 mt-1">by {firstService.providerName}</p>
+                            <p className="text-xs text-gray-500 mt-1">{businessServices.length} services available</p>
+                          </div>
+                          <div className="text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-gray-500">No services available in this category</p>
+            )}
           </div>
         </div>
       )}
