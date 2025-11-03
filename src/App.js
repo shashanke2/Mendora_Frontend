@@ -18,6 +18,7 @@ import ServicePage from "./ServicePage";
 import Individualservice from "./IndividualService";
 import PaymentProof from "./PaymentProof";
 import ProviderVerify from './ProviderVerify'
+import PasswordPage from "./password";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/number" element={<MobilePage />} />
         <Route path="/verify" element={<VerifyPage />} />
+        <Route path="/password" element={<PasswordPage />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/provider-registration" element={<ProviderRegistration />} />
         <Route path="/no-bookings" element={<NoBookings />} />

@@ -1,3 +1,4 @@
+// src/pages/ServiceProviderRegistration.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,17 +11,20 @@ import {
   Building2,
   ShieldCheck,
   LayoutPanelLeft,
+  KeyIcon,
 } from "lucide-react";
+
+import { signupProvider } from "./utils/authService";
 
 export default function ServiceProviderRegistration() {
   const [businessName, setBusinessName] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
   const [serviceCategory, setServiceCategory] = useState("");
   const [services, setServices] = useState([{ name: "", price: "" }]);
-  const [ephone, setEphone] = useState("");
   const [file, setFile] = useState(null);
   const [efile, setEfile] = useState(null);
   const [isAgreed, setIsAgreed] = useState(false);
@@ -31,9 +35,10 @@ export default function ServiceProviderRegistration() {
     ownerName: "",
     phone: "",
     email: "",
+    password: "",
     address: "",
     serviceCategory: "",
-    ephone: "",
+    terms: "",
   });
 
   const handleFileChange = (e) => {
@@ -53,43 +58,52 @@ export default function ServiceProviderRegistration() {
     setServices([...services, { name: "", price: "" }]);
   };
 
-  const handleSubmit = () => {
-  const newErrors = {
-    businessName: businessName.trim() ? "" : "Business name is required",
-    ownerName: ownerName.trim() ? "" : "Owner name is required",
-    phone: /^\d{10}$/.test(phone.trim())
-      ? ""
-      : "Enter a valid 10-digit phone number",
-    email: email.trim() ? "" : "Email is required",
-    address: address.trim() ? "" : "Address is required",
-    serviceCategory: serviceCategory.trim()
-      ? ""
-      : "Service category is required",
-    ephone: /^\d{10}$/.test(ephone.trim())
-      ? ""
-      : "Enter a valid 10-digit phone number",
-    terms: isAgreed ? "" : "You must agree to the Terms of Service and Privacy Policy",
+  const handleSubmit = async () => {
+    const newErrors = {
+      businessName: businessName.trim() ? "" : "Business name is required",
+      ownerName: ownerName.trim() ? "" : "Owner name is required",
+      phone: /^\d{10}$/.test(phone.trim())
+        ? ""
+        : "Enter a valid 10-digit phone number",
+      email: email.trim() ? "" : "Email is required",
+      password: password.trim() ? "" : "Password is Required",
+      address: address.trim() ? "" : "Address is required",
+      serviceCategory: serviceCategory.trim()
+        ? ""
+        : "Service category is required",
+      terms: isAgreed ? "" : "You must agree to the Terms of Service and Privacy Policy",
+    };
+
+    setErrors(newErrors);
+
+    const hasError = Object.values(newErrors).some((err) => err !== "");
+    if (hasError) return;
+
+    try {
+      const payload = {
+        business_name: businessName,
+        fullname: ownerName,
+        phone_number: phone,
+        email,
+        password,
+        business_address: address,
+        service_category: serviceCategory,
+        services: services.map((s) => ({
+          serviceName: s.name,
+          price: s.price ? Number(s.price) : 0,
+        })),
+      };
+
+      const res = await signupProvider(payload);
+
+      alert(res.message || "Registered successfully!");
+      navigate("/subscribe");
+    } catch (err) {
+      console.error("Signup error:", err);
+      const msg = err.response?.data?.message || err.message || "Registration failed";
+      alert(msg);
+    }
   };
-
-  setErrors(newErrors);
-
-  const hasError = Object.values(newErrors).some((err) => err !== "");
-  if (hasError) return;
-
-  console.log("Form Submitted:", {
-    businessName,
-    ownerName,
-    phone,
-    email,
-    address,
-    file,
-    serviceCategory,
-    services,
-    efile,
-    ephone,
-  });
-  navigate("/provider-verify");
-};
 
   return (
     <div className="min-h-screen bg-white px-6 py-4">
@@ -185,6 +199,24 @@ export default function ServiceProviderRegistration() {
               Verify
             </button>
           </div>
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="flex items-center gap-2 text-gray-700 text-sm font-bold">
+            <KeyIcon className="text-orange-500" size={18} />
+            Password<span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            placeholder="Enter your password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-gray-100 rounded-3xl px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+          )}
         </div>
 
         {/* Business Address */}
@@ -302,24 +334,6 @@ export default function ServiceProviderRegistration() {
           </label>
           {efile && (
             <p className="mt-2 text-sm text-green-600">Selected: {efile.name}</p>
-          )}
-        </div>
-
-        {/* Emergency Contact Number */}
-        <div>
-          <label className="flex items-center gap-2 text-gray-700 text-sm font-bold">
-            <Phone className="text-orange-500" size={18} />
-            Emergency Contact Number<span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            placeholder="Enter Emergency contact number"
-            value={ephone}
-            onChange={(e) => setEphone(e.target.value.replace(/[^0-9]/g, ""))}
-            className="w-full bg-gray-100 rounded-3xl px-4 py-3 mt-1 focus:outline-none focus:ring-2 focus:ring-orange-400"
-          />
-          {errors.ephone && (
-            <p className="text-red-500 text-sm mt-1">{errors.ephone}</p>
           )}
         </div>
       </div>
